@@ -1,0 +1,86 @@
+﻿<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>登录</title>
+	<link rel="stylesheet" type="text/css" href="../../static/css/styles.css">
+	<script type="text/javascript" src="/static/js/jquery-3.3.1.min.js"></script>
+	<script type="text/javascript" src="/static/js/vue.js"></script>
+	<script type="text/javascript" src="/static/plugins/layui/lay/modules/layer.js"></script>
+	<script type="text/javascript" src="/static/js/jquery.md5.js"></script>
+	<script type="text/javascript">
+		$(function(){
+			//页面加载完成以后触发
+			var login_error = '${login_error}';
+			if(login_error == 1 || login_error == 2){
+				layer.msg("账号或密码错误");
+				$("#username").val('${username}');
+			} else if(login_error == 3){
+				$("#username").val('${username}');
+				layer.msg("验证码错误");
+			}
+		})
+
+		function verify(){
+			var ifnull = false;
+			$(".form input").each(function(index,elem){
+				if(!$(elem).val()){
+					ifnull = true;
+					var attr = $(elem).attr("id");
+					var attrname = "";
+					if(attr == "username"){
+						attrname = "账号";
+					} else if(attr == "password"){
+						attrname = "密码";
+					} else if(attr == "verifycode"){
+						attrname = "验证码";
+					}
+					layer.msg("请输入"+attrname);
+					return false;
+				}
+			})
+			// $("#password").val($.md5($("#password").val()));
+			return !ifnull;
+		}
+
+		function reloadCode(){
+			var time = new Date().getTime();
+			$(".login_form span img").attr("src","${request.contextPath}/captcha/init?" + time);
+		}
+</script>
+</head>
+<body>
+<div class="htmleaf-container">
+	<div class="wrapper">
+		<div class="container">
+			<h1>Welcome</h1>
+			<form class="form" action="${request.contextPath}/user/toIndex" method="post" onsubmit="return verify();">
+				<input type="text" name="username" id="username" placeholder="账号">
+				<input type="password" name="password" id="password" placeholder="密码">
+				<button type="submit" id="login-button">登录</button>
+			</form>
+		</div>
+		
+		<ul class="bg-bubbles">
+			<li></li>
+			<li></li>
+			<li></li>
+			<li></li>
+			<li></li>
+			<li></li>
+			<li></li>
+			<li></li>
+			<li></li>
+			<li></li>
+		</ul>
+	</div>
+</div>
+
+
+<div style="text-align:center;margin:50px 0; font:normal 14px/24px 'MicroSoft YaHei';color:#000000">
+<h1>小z的博客</h1>
+</div>
+</body>
+</html>

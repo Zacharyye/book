@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:v-bind="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8" content="text/html">
+    <title>小z'博客-聆听、分享</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script type="text/javascript" src="/static/js/jquery-3.3.1.min.js"></script>
+    <script type="text/javascript" src="/static/js/vue.js"></script>
+    <script type="text/javascript" src="/static/js/sweetalert2.all.min.js"></script>
+    <script type="text/javascript" src="/static/plugins/layui/lay/modules/layer.js"></script>
+    <script type="text/javascript" >
+        //文字滚动
+        (function($){
+            $.fn.textSlider = function(settings){
+                settings = jQuery.extend({
+                    speed:"normal",
+                    line: 2,
+                    timer: 1000
+                },settings);
+                return this.each(function(){
+                    $.fn.textSlider.scllor($(this),settings)
+                })
+            };
+            $.fn.textSlider.scllor = function($this,settings){
+                var ul = $("ul:eq(0)",$this);
+                var timerID;
+                var li = ul.children();
+                var _btnUp = $(".up:eq(0)",$this);
+                var _btnDown = $(".down:eq(0)");
+                var liHight = $(li[0]).height();
+                var upHeight = 0 - settings.line * liHight;
+                var scrollUp = function(){
+                    _btnUp.unbind("click",scrollUp);
+                    ul.animate({
+                            marginTop: upHeight
+                        },
+                        settings.speed,
+                        function(){
+                            for(var i = 0;i < settings.line;i++){
+                                ul.find("li:first").appendTo(ul);
+                            }
+                            ul.css({
+                                marginTop: 0
+                            })
+                            _btnUp.bind("click",scrollUp);
+                        }
+                    )
+                }
+                var scrollDown = function(){
+                    _btnDown.unbind("click",scrollDown);
+                    ul.css({
+                        marginTop: upHeight
+                    })
+                    for(var i = 0; i < settings.line;i++){
+                        ul.find("li:last").prependTo(ul)
+                    }
+                    ul.animate({
+                        marginTop:0
+                    },
+                        settings.speed,
+                        function(){
+                            _btnDown.bind("click",scrollDown)
+                        }
+                    )
+                }
+                var autoPlay = function(){
+                    timerID =  window.setInterval(scrollUp,settings.timer)
+                }
+                var autoStop = function(){
+                    window.clearInterval(timerID)
+                }
+                ul.hover(autoStop,autoPlay).mouseout();
+                _btnUp.css("cursor","pointer").click(scrollUp);
+                _btnUp.hover(autoStop,autoPlay);
+                _btnDown.css("cursor","pointer").click(scrollDown);
+                _btnDown.hover(autoStop,autoPlay);
+            }
+        })(jQuery)
+        $(function(){
+            $(".scrolldiv").textSlider({line:1,speed:300,timer: 6000});
+            var vue = new Vue({
+                el: "#site-content",
+                data: {
+                    articles: [],
+                    totalPage: 1,
+                    currentPage: 1,
+                    pageSize: 10,
+                    totalArticleNum: 0,
+                    totalCommentNum: 0,
+                    totalCategoryNum: 0,
+                    totalTagNum: 0,
+                    totalReadNum: 0,
+                    totalLinkNum: 0,
+                    lastModifiedTime: "2019年1月25日",
+                    hotArticles: ""
+                },
+                created: function(){
+                    var v = this;
+                    v.init();
+                },
+                computed:{
+                    pages: function(){
+                        var v = this;
+                        var arr = [];
+                        for(var i = 1; i < v.totalPage - 1; i++){
+                            arr[i - 1 ] = i + 1;
+                        }
+                        return arr;
+                    }
+                },
+                methods: {
+                    init: function(){
+                        var v = this;
+                        $.ajax({
+                            url: "${request.contextPath}/article/findAllSimplifiedArticles",
+                            type:"post",
+                            data:{"currentPage": v.currentPage,"pageSize":v.pageSize},
+                            dataType:"json",
+                            success: function(result){
+                                v.articles = result.data.articles;
+                                v.totalPage = result.data.r_cal.totalPage;
+                                v.totalArticleNum = result.data.r_cal.totalArticleNum;
+                                v.totalReadNum = result.data.r_cal.totalSupportNum;
+                                v.hotArticles = result.data.hot_articles;
+                            },
+                            error: function(){
+                                layer.alert("网络出错啦！",{icon: 2});
+                            }
+                        });
+                    },
+                    showSearchBox : function(){
+                        $(".search-main").toggle();
+                    },
+                    changePage: function(e){
+                        //页面点击事件
+                        var v = this;
+                        v.currentPage = $(e.target).text();
+                        v.init();
+                    },
+                    changeToPreviousPage: function(){
+                        var v = this;
+                        if(v.currentPage == 1){
+                            //啥都不做
+                        } else {
+                            v.currentPage = parseInt(v.currentPage) - 1;
+                            v.init();
+                        }
+                    },
+                    changeToNextPage: function(){
+                        var v = this;
+                        if(v.currentPage == v.totalPage){
+                            //啥都不做
+                        } else {
+                            v.currentPage = parseInt(v.currentPage) + 1;
+                            v.init();
+                        }
+                    },
+                    handleDate: function(dateStr){
+                        var v = this;
+                        var arr = dateStr.split("-");
+                        return arr[0] + "年" + arr[1] + "月" + arr[2] + "日";
+                    }
+                }
+            });
+
+        })
+    </script>
+</head>
+<body>
+    <div  id="site-content">
+    <header class="site-header">
+        <nav class="top-header">
+            <div class="top-nav">
+                <div class="user-login">
+                    <#if (Session.username)??>
+                         ${Session.username}
+                    <#else>
+                        <a href="${request.contextPath}/user/login"><i class="fa fa-sign-in"></i>登录</a>
+                </#if>
+                </div>
+                <div class="menu-topmenu-container">
+                    <ul class="top-menu">
+                        <li class="menu-item">
+                            <#if (Session.username)??>
+                            <a href="${request.contextPath}/user/logout">
+                                <i class="fa fa-sign-out"></i>
+                                <span class="">退出</span>
+                            </a>
+                            <#else>
+
+                            </#if>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <div class="menu-box">
+            <div class="secondtop-menu">
+                <span class="nav-search" @click="showSearchBox();"><i class="fa fa-search"></i></span>
+                <div class="logo-site">
+                    <h1 class="site-title"><a href="${request.contextPath}/user/index">小z'博客</a></h1>
+                    <p class="site-description">聆听，分享</p>
+                </div>
+                <div class="site-nav-wrap">
+                    <nav class="site-nav">
+                        <div class="menu-pcmenu-container">
+                            <ul class="down-menu nav-menu">
+                                <li class="menu-item menu-item-type-custom menu-item-object-custom">
+                                    <a href="${request.contextPath}/user/userIndex">
+                                        <i class="fa-pencil fa"></i>
+                                        <span class="font-text">写文章</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item menu-item-type-custom menu-item-object-custom">
+                                    <a href="javascript:void(0);">
+                                        <i class="fa-comments fa"></i>
+                                        <span class="font-text">留言板</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </nav>
+                </div>
+                <div class="clear"></div>
+            </div>
+        </div>
+    </header>
+    <!-- 搜索框 -->
+    <div class="search-main">
+        <div class="searchbar">
+            <form method="get" class="searchForm" action="${request.contextPath}/user/index">
+                <span>
+                    <input type="text" value="" name="query" placeholder="输入搜索内容" required>
+                    <button type="submit" class="searchsubmit">搜索</button>
+                </span>
+            </form>
+        </div>
+        <div class="clear"></div>
+    </div>
+    <!-- 新闻小喇叭 -->
+    <nav class="breadcrumb">
+        <div class="bull">
+            <i class="fa fa-snowflake-o fa-spin"></i>
+        </div>
+        <div class="scrolldiv">
+            <div class="scrolltext">
+                <ul style="margin-top: 0;">
+                    <li class="scrolltext-title">
+                        <a href="/" rel="bookmark">欢迎来到小z'博客</a>
+                    </li>
+                    <li class="scrolltext-title">
+                        <a href="/" rel="bookmark">本站测试~</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <!-- 内容区域 -->
+    <div class="site-content" style="transform: none;">
+        <div class="content-area">
+            <Main class="site-Main" role="Main">
+                <article class="post type-post" v-for="art in articles">
+                    <figure class="thumbnail">
+                        <a href="${request.contextPath}/user/index">
+                            <img width="280" height="210" src="../../static/images/bg/1.jpg" >
+                        </a>
+                        <span class="cat">
+                            <a href="${request.contextPath}/user/index">{{art.category_name}}</a>
+                        </span>
+                    </figure>
+                    <header class="entry-header">
+                        <h2 class="entry-title">
+                            <a href="${request.contextPath}/user/index" rel="bookmark">
+                                {{art.title}}
+                            </a>
+                        </h2>
+                    </header>
+                    <div class="entry-content">
+                        <div class="archive-content" v-html="art.content.substring(0,99) + ((art.content.length > 99) ? '.....' : '') "></div>
+                        <span class="title-l"></span>
+                        <span class="new-icon"></span>
+                        <span class="entry-meta">
+                            <span class="date">{{handleDate(art.created_time)}}&nbsp;&nbsp;</span>
+                            <span class="views"><i class="fa fa-eye"></i>&nbsp;{{art.support}}&nbsp;views</span>
+                            <span class="comment">&nbsp;&nbsp;<a><i class="fa fa-comment-o">&nbsp;{{art.comment_num}}</i></a></span>
+                        </span>
+                        <div class="clear"></div>
+                    </div>
+                    <span class="entry-more">
+                        <a :href="'${request.contextPath}/article/showDetail/' + art.id">阅读全文</a>
+                    </span>
+                </article>
+            </Main>
+            <!-- 页码导航栏 -->
+            <nav class="navigation pagination" role="navigation" v-if="totalPage >= 2">
+                <div class="nav-links">
+                    <a class="page-numbers" v-bind:class="{disabled: currentPage == 1}" @click="changeToPreviousPage();">&lt;</a>
+                    <a class="page-numbers" v-bind:class="{current: currentPage == 1}" @click="changePage($event)">1</a>
+                    <span v-if = "totalPage >= 8">
+                                <a class="page-numbers" v-if="(currentPage - 1) > 3 && (totalPage - currentPage) > 2">...</a>
+                                <a class="page-numbers" v-for="num in pages" v-bind:class="{current: currentPage == num}" v-if=" (currentPage - 1) <= num && num <= (currentPage + 1)" @click="changePage($event)">{{num}}</a>
+                                <a class="page-numbers" v-if="(currentPage - 1) > 3  && (totalPage - currentPage) > 2">...</a>
+                            </span>
+                    <span v-if = "totalPage < 8">
+                                <a class="page-numbers" v-for="num in pages" v-bind:class="{current: currentPage == num}" @click="changePage($event)">{{num}}</a>
+                            </span>
+                    <a class="page-numbers" v-bind:class="{current: currentPage == totalPage}" @click="changePage($event)">{{totalPage}}</a>
+                    <a class="page-numbers" v-bind:class="{disabled: currentPage == totalPage}"@click="changeToNextPage();">&gt;</a>
+                </div>
+            </nav>
+        </div>
+
+         <!-- 侧边菜单栏 -->
+        <div class="widget-area all-sidebar">
+            <!-- 关于本站 -->
+            <aside class="widget about">
+                <h3 class="widget-title"><i class="fa fa-bars"></i>关于本站</h3>
+                <div class="feed-widget">
+                    <div class="feed-about">
+                        <div class="about-Main">
+                            <div class="about-img">
+                                <img src="../../static/images/bg/1.jpg" title="QR_code">
+                            </div>
+                            <div class="about-name">博客初心</div>
+                            <div class="about-the">自我学习的新起点，珍惜时间，保持努力的惯性</div>
+                        </div>
+                        <div class="clear"></div>
+                        <ul></ul>
+                    </div>
+                    <div class="about-inf">
+                        <span class="about-pn">文章 {{totalArticleNum}}</span>
+                        <span class="about-cn">留言 {{totalCommentNum}}</span>
+                    </div>
+                </div>
+                <div class="clear"></div>
+            </aside>
+            <!-- 网站概况 -->
+            <aside class="widget php-text">
+                <h3 class="widget-title"><i class="fa fa-bars"></i>网站概况</h3>
+                <div class="textwidget widget-text">
+                    <ul class="site-profile">
+                        <li><i class="fa fa-file-o fa-fw"></i>文章总数：{{totalArticleNum}}篇</li>
+                        <li><i class="fa fa-commenting-o fa-fw"></i>留言数量：{{totalCommentNum}}条</li>
+                        <li><i class="fa fa-folder-o fa-fw"></i>分类数量：{{totalCategoryNum}}个</li>
+                        <li><i class="fa fa-tags fa-fw"></i>标签总数：{{totalTagNum}}个</li>
+                        <li><i class="fa fa-link fa-fw"></i>链接数量：{{totalLinkNum}}个</li>
+                        <li><i class="fa fa-clock-o fa-fw"></i>浏览总量：{{totalReadNum}}次</li>
+                        <li><i class="fa fa-eye fa-fw"></i>最后更新：{{lastModifiedTime}}</li>
+                    </ul>
+                </div>
+                <div class="clear"></div>
+            </aside>
+            <!-- 热门文章 -->
+            <aside class="widget hot-comment">
+                <h3 class="widget-title"><i class="fa fa-bars"></i>热门文章</h3>
+                <div class="hot-comment-widget">
+                    <ul>
+                        <li v-for="(article,index) in hotArticles">
+                            <span :class="['li-icon' ,'li-icon-'+(index+1)]">{{index+1}}</span>
+                            <a :href="'${request.contextPath}/article/showDetail/' + article.id" rel="bookmark" target="_blank">{{article.title}}</a>
+                        </li>
+
+                    </ul>
+                </div>
+                <div class="clear"></div>
+            </aside>
+            <!-- 热门标签 -->
+            <aside class="widget">
+                <h3 class="widget-title"><i class="fa fa-bars"></i>所有标签</h3>
+                <div class="tagcloud">
+                    <a href="${request.contextPath}/user/index" class="tag-link-129 tag-link-position-1" style="font-size:14px;">Java</a>
+                </div>
+                <div class="clear"></div>
+            </aside>
+            <!-- 随机文章 -->
+            <aside class="widget">
+                <h3 class="widget-title"><i class="fa fa-bars"></i>随机文章</h3>
+                <div class="random-post-widget">
+                    <ul>
+                        <li>sql语句分为三类（DML、DDL、DCL）-介绍</li>
+                        <li>MySQL存储引擎 -- MyISAM与InnoDB区别</li>
+                        <li>zz..</li>
+                        <li>使用rapid-framework继承jsp页面</li>
+                        <li>Hibernate基本类型</li>
+                        <li>五种IO模型</li>
+                        <li>JDBC常用API和使用</li>
+                        <li>JSP中forward转发和sendRedirect重定向的区别</li>
+                    </ul>
+                </div>
+                <div class="clear"></div>
+            </aside>
+            <!-- 近期评论 -->
+            <aside class="widget">
+                <h3 class="widget-title"><i class="fa fa-bars"></i>近期评论</h3>
+                <div class="message-widget">
+                    <ul>
+                        <li>
+                            <a href="${request.contextPath}/user/index">
+                                <img src="http://cn.gravatar.com/avatar/59cf3ac492db80946c7e58ca635d1a67?s=128&d=identicon&r=PG" class="avatar" height="64" width="64">
+                                <span class="comment-author">
+                                    <strong>zzz</strong>
+                                </span>
+                                "zzz"
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </aside>
+        </div>
+    </div>
+    </div>
+    <div class="clear"></div>
+    <footer class="site-footer wow fadeInUp" data-wow-delay="0.3s" role="contentinfo">
+        <div class="site-info">
+            <p style="text-align: center;">Copyright © ZAY博客</p>
+        </div>
+    </footer>
+</body>
+</html>

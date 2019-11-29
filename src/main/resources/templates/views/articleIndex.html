@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:v-bind="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8" content="text/html">
+    <title>小z~${article.title}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/plugins/owo/OwO.min.css">
+    <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script type="text/javascript" src="/static/js/jquery-3.3.1.min.js"></script>
+    <script type="text/javascript" src="/static/js/vue.js"></script>
+    <script type="text/javascript" src="/static/js/sweetalert2.all.min.js"></script>
+    <script type="text/javascript" src="/static/plugins/layui/lay/modules/layer.js"></script>
+    <script type="text/javascript" src="/static/plugins/owo/OwO.min.js"></script>
+    <script type="text/javascript" >
+        //文字滚动
+        (function($){
+            $.fn.textSlider = function(settings){
+                settings = jQuery.extend({
+                    speed:"normal",
+                    line: 2,
+                    timer: 1000
+                },settings);
+                return this.each(function(){
+                    $.fn.textSlider.scllor($(this),settings)
+                })
+            };
+            $.fn.textSlider.scllor = function($this,settings){
+                var ul = $("ul:eq(0)",$this);
+                var timerID;
+                var li = ul.children();
+                var _btnUp = $(".up:eq(0)",$this);
+                var _btnDown = $(".down:eq(0)");
+                var liHight = $(li[0]).height();
+                var upHeight = 0 - settings.line * liHight;
+                var scrollUp = function(){
+                    _btnUp.unbind("click",scrollUp);
+                    ul.animate({
+                            marginTop: upHeight
+                        },
+                        settings.speed,
+                        function(){
+                            for(var i = 0;i < settings.line;i++){
+                                ul.find("li:first").appendTo(ul);
+                            }
+                            ul.css({
+                                marginTop: 0
+                            })
+                            _btnUp.bind("click",scrollUp);
+                        }
+                    )
+                }
+                var scrollDown = function(){
+                    _btnDown.unbind("click",scrollDown);
+                    ul.css({
+                        marginTop: upHeight
+                    })
+                    for(var i = 0; i < settings.line;i++){
+                        ul.find("li:last").prependTo(ul)
+                    }
+                    ul.animate({
+                        marginTop:0
+                    },
+                        settings.speed,
+                        function(){
+                            _btnDown.bind("click",scrollDown)
+                        }
+                    )
+                }
+                var autoPlay = function(){
+                    timerID =  window.setInterval(scrollUp,settings.timer)
+                }
+                var autoStop = function(){
+                    window.clearInterval(timerID)
+                }
+                ul.hover(autoStop,autoPlay).mouseout();
+                _btnUp.css("cursor","pointer").click(scrollUp);
+                _btnUp.hover(autoStop,autoPlay);
+                _btnDown.css("cursor","pointer").click(scrollDown);
+                _btnDown.hover(autoStop,autoPlay);
+            }
+        })(jQuery)
+        $(function(){
+            $(".scrolldiv").textSlider({line:1,speed:300,timer: 6000});
+            var vue = new Vue({
+                el: "#site-content",
+                data: {
+                    articles: [],
+                    totalPage: 1,
+                    currentPage: 1,
+                    pageSize: 5,
+                    totalArticleNum: 0,
+                    totalCommentNum: 0,
+                    totalCategoryNum: 0,
+                    totalTagNum: 0,
+                    totalReadNum: 0,
+                    totalLinkNum: 0,
+                    lastModifiedTime: "2019年4月19日",
+                    commentList: [],
+                    commentContent: "",
+                    commentAuthor:"${username}",
+                    commentEmail:"",
+                    commentUrl:""
+                },
+                created: function(){
+                    var v = this;
+                    v.init();
+                },
+                computed:{
+                    pages: function(){
+                        var v = this;
+                        var arr = [];
+                        for(var i = 1; i < v.totalPage - 1; i++){
+                            arr[i - 1 ] = i + 1;
+                        }
+                        return arr;
+                    }
+                },
+                methods: {
+                    init: function(){
+                        var v = this;
+                        v.loadComments();
+                    },
+                    loadComments: function(){
+                        var v = this;
+                        var dataMap = {"currentPage":v.currentPage,"pageSize":v.pageSize};
+                        $.ajax({
+                            url:"${request.contextPath}/article/findCommentsByArticleId/${articleId}",
+                            type:"get",
+                            dataType:"json",
+                            data:dataMap,
+                            success: function(result){
+                                console.log(result);
+                                if(result.status == 0){
+                                    v.commentList = result.data;
+                                    v.totalPage = result.data[0].totalPage;
+                                    v.totalCommentNum = result.data[0].totalNum;
+                                }
+
+                            },
+                            error: function(){
+                                layer.alert("哇，出错了，请重试",{icon:2});
+                            }
+                        });
+                    },
+                    showSearchBox : function(){
+                        $(".search-main").toggle();
+                    },
+                    submitComment: function(){
+                        var v = this;
+                        if(!v.check()){
+                            return;
+                        }
+                        var dataMap = {"commentContent":v.commentContent,"commentAuthor":v.commentAuthor,"commentEmail":v.commentEmail,"commentUrl":v.commentUrl,"articleId":"${article.id}"};
+                        $.ajax({
+                            url:"${request.contextPath}/article/addComment",
+                            type:"post",
+                            dataType:"json",
+                            data: dataMap,
+                            success: function(result){
+                                if(result.status != 0){
+                                    layer.alert("评论失败了，请检查昵称",{icon: 2});
+                                    console.log("${username}");
+                                } else {
+                                    layer.alert("评论成功",{icon: 1},function(){
+                                        window.location.reload();
+                                    });
+                                }
+                            },
+                            error: function(){
+                                layer.msg("后台好像投了点小懒哦，刷新一下试试！",{icon: 2},function(){
+                                    window.location.reload();
+                                });
+                            }
+                        });
+                    },
+                    check: function(){
+                        var v = this;
+                        var bool_flag = true;
+                        if(!v.commentContent){
+                            layer.tips("您忘了填写内容~","#commentContent",{tips:[2,"#2f889a"]});
+                            $("#commentContent").focus();
+                            bool_flag = false;
+                        }
+                        return bool_flag;
+                    },
+                    changePage: function(e){
+                        //页面点击事件
+                        var v = this;
+                        v.currentPage = $(e.target).text();
+                        v.init();
+                    },
+                    changeToPreviousPage: function(){
+                        var v = this;
+                        if(v.currentPage == 1){
+                            //啥都不做
+                        } else {
+                            v.currentPage = parseInt(v.currentPage) - 1;
+                            v.init();
+                        }
+                    },
+                    changeToNextPage: function(){
+                        var v = this;
+                        if(v.currentPage == v.totalPage){
+                            //啥都不做
+                        } else {
+                            v.currentPage = parseInt(v.currentPage) + 1;
+                            v.init();
+                        }
+                    },
+                    replyComment: function(idStr){
+                        layer.tips("Emm,此功能尚未开放~","#" + idStr,{tips:[2,"#2f889a"]});
+                    }
+                }
+            });
+            //owo表情
+            var owo = new OwO({
+                logo:'',
+                container: document.getElementsByClassName("OwO")[0],
+                target: document.getElementsByClassName("comment-input-content")[0],
+                api:'/static/plugins/owo/OwO.json',
+                position:'down',
+                width:'100%',
+                maxHeight: '250px'
+            });
+        })
+    </script>
+</head>
+<body>
+    <div  id="site-content">
+    <header class="site-header">
+        <nav class="top-header">
+            <div class="top-nav">
+                <div class="user-login">
+                    <#if (Session.username)??>
+                        ${Session.username}
+                    <#else>
+                        <a href="${request.contextPath}/user/login"><i class="fa fa-sign-in"></i>登录</a>
+                    </#if>
+                </div>
+                <div class="menu-topmenu-container">
+                    <ul class="top-menu">
+                        <li class="menu-item">
+                            <#if (Session.username)??>
+                            <a href="${request.contextPath}/user/logout">
+                                <i class="fa fa-sign-out"></i>
+                                <span class="">退出</span>
+                            </a>
+                            <#else>
+
+                            </#if>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <div class="menu-box">
+            <div class="secondtop-menu">
+                <span class="nav-search" @click="showSearchBox();"><i class="fa fa-search"></i></span>
+                <div class="logo-site">
+                    <h1 class="site-title"><a href="${request.contextPath}/user/index">小z'博客</a></h1>
+                    <p class="site-description">聆听，分享</p>
+                </div>
+                <div class="site-nav-wrap">
+                    <nav class="site-nav">
+                        <div class="menu-pcmenu-container">
+                            <ul class="down-menu nav-menu">
+                                <li></li>
+                            </ul>
+                        </div>
+                    </nav>
+                </div>
+                <div class="clear"></div>
+            </div>
+        </div>
+    </header>
+    <!-- 搜索框 -->
+    <div class="search-main">
+        <div class="searchbar">
+            <form method="get" class="searchForm" action="${request.contextPath}/user/index">
+                <span>
+                    <input type="text" value="" name="query" placeholder="输入搜索内容" required>
+                    <button type="submit" class="searchsubmit">搜索</button>
+                </span>
+            </form>
+        </div>
+        <div class="clear"></div>
+    </div>
+    <!-- 新闻小喇叭 -->
+    <nav class="breadcrumb">
+        <div class="bull">
+            <i class="fa fa-snowflake-o fa-spin"></i>
+        </div>
+        <div class="scrolldiv">
+            <div class="scrolltext">
+                <ul style="margin-top: 0;">
+                    <li class="scrolltext-title">
+                        <a href="/" rel="bookmark">欢迎来到小z'博客</a>
+                    </li>
+                    <li class="scrolltext-title">
+                        <a href="/" rel="bookmark">本站测试~</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <!-- 内容区域 -->
+    <div class="site-content" style="transform: none;">
+        <div id="primary" class="content-area">
+            <Main class="site-Main" role="Main">
+                <article class="post">
+                    <header class="entry-header">
+                        <h1 class="entry-title">${article.title}</h1>
+                    </header>
+                    <div class="entry-content">
+                        <div class="single-content">${article.content}</div>
+                        <div class="clear"></div>
+                        <footer class="single-footer">
+                            <ul class="single-meta">
+                                <li class="comment">
+                                    <a>
+                                        <i class="fa fa-comment-o">&nbsp;{{totalCommentNum}}&nbsp;</i>
+                                    </a>
+                                </li>
+                                <li class="views">
+                                    <i class="fa fa-eye">&nbsp;${article.support}&nbsp;views</i>
+                                </li>
+                            </ul>
+                        </footer>
+                    </div>
+                </article>
+                <!-- 评论区 -->
+                <div class="comments-area">
+                    <div class="comment-respond wow fadeInUp" data-wow-delay="03.s">
+                        <h3 class="comment-reply-title">发表评论
+                            <small>
+                                <a rel="nofollow" href="javascript:void(0);" style="display:none;">取消回复</a>
+                            </small>
+                        </h3>
+                        <form action method="post">
+                            <p class="comment-form-comment"></p>
+                            <div class="OwO"></div>
+                            <textarea id="commentContent" class="comment-input-content" name="commentContent" rows="4" tabindex="1" v-model="commentContent"></textarea>
+                            <#if (Session.username)??>
+
+                            <#else>
+                                <div class="comment-author-info">
+                                    <p class="comment-form-author">
+                                        <label for="author">昵称<span class="required">*</span></label>
+                                        <input type="text" class="comment-input comment-input-who" name="commentAuthor" id="commentAuthor" v-model="commentAuthor">
+                                    </p>
+                                    <p class="comment-form-email">
+                                        <label for="email">邮箱<span class="required">*</span></label>
+                                        <input type="text" class="comment-input comment-input-email" name="commentAuthorEmail" id="commentAuthorEmail" v-model="commentEmail">
+                                    </p>
+                                    <p class="comment-form-url">
+                                        <label for="author">网址</label>
+                                        <input type="text" class="comment-input comment-input-website" name="commentAuthorUrl" id="commentAuthorUrl" v-model="commentUrl">
+                                    </p>
+                                </div>
+                            </#if>
+                            <p class="form-submit">
+                                <input id="submit" name="submit" type="button" tabindex="5" value="提交评论" @click="submitComment();">
+
+                            </p>
+                        </form>
+                    </div>
+                    <h2 class="comments-title wow fadeInUp" data-wow-delay="0.3s">目前评论：{{totalCommentNum}}</h2>
+                    <ul class="comment-list">
+                        <!-- 回复功能 -->
+                        <li class="comment even thread-even parent" v-bind:id="'comment-id-' + comment.id" v-for="comment in commentList">
+                            <div class="comment-body">
+                                <div class="comment-author vcard">
+                                    <img class="avatar" src="//gravatar.loli.net/avatar/2b3779b9472cddf89283cb1a0c4b33c1?s=256&d=mm" alt="avatar">
+                                    <strong>
+                                        <a href rel="external nofollow" class="native-list-one-head-name" target="_blank">{{comment.author}}</a>
+                                    </strong>
+                                    <span class="comment-meta commentmetadata native-comment-ua">
+                                        <span class="ua-info">
+                                            <span class="ua visible-md-block">Chrome 70.0.3538.102</span>
+                                            <span class="ua visible-md-block">Windows 10</span>
+                                        </span>
+                                        <br>
+                                        <span class="comment-aux">
+                                            <span class="reply">
+                                                <a rel="nofollow" at="1995" v-bind:id="'comment-reply-id-' + comment.id" class="native-list-one-footer-reback" @click="replyComment('comment-reply-id-' + comment.id);">回复</a>
+                                            </span>
+                                           {{comment.created_time}}
+                                        </span>
+                                    </span>
+                                </div>
+                                <p>{{comment.content}}</p>
+                            </div>
+                            <!--<ul class="comment-list children">
+                                &lt;!&ndash; 回复功能 &ndash;&gt;
+                                <li class="comment even thread-even parent" id="comment-id-1996">
+                                    <div class="comment-body">
+                                        <div class="comment-author vcard">
+                                            <img class="avatar" src="//gravatar.loli.net/avatar/2b3779b9472cddf89283cb1a0c4b33c1?s=256&d=mm" alt="avatar">
+                                            <strong>
+                                                <a href rel="external nofollow" class="native-list-one-head-name" target="_blank">1</a>
+                                            </strong>
+                                            <span class="comment-meta commentmetadata native-comment-ua">
+                                        <span class="ua-info">
+                                            <span class="ua visible-md-block">Chrome 70.0.3538.102</span>
+                                            <span class="ua visible-md-block">Windows 10</span>
+                                        </span>
+                                        <br>
+                                        <span class="comment-aux">
+                                            <span class="reply">
+                                                <a rel="nofollow" at="1996" class="native-list-one-footer-reback" href="javascript: void(0);">回复</a>
+                                            </span>
+                                            2018-12-12 15:27
+                                        </span>
+                                    </span>
+                                        </div>
+                                        <p>博客不错，很喜欢</p>
+                                    </div>
+                                </li>
+                            </ul>-->
+                        </li>
+                    </ul>
+                    <nav class="navigation pagination" role="navigation" v-if="totalPage >= 2">
+                        <div class="nav-links">
+                            <a class="page-numbers" v-bind:class="{disabled: currentPage == 1}" @click="changeToPreviousPage();">&lt;</a>
+                            <a class="page-numbers" v-bind:class="{current: currentPage == 1}" @click="changePage($event)">1</a>
+                            <span v-if = "totalPage >= 8">
+                                <a class="page-numbers" v-if="(currentPage - 1) > 3 && (totalPage - currentPage) > 2">...</a>
+                                <a class="page-numbers" v-for="num in pages" v-bind:class="{current: currentPage == num}" v-if=" (currentPage - 1) <= num && num <= (currentPage + 1)" @click="changePage($event)">{{num}}</a>
+                                <a class="page-numbers" v-if="(currentPage - 1) > 3  && (totalPage - currentPage) > 2">...</a>
+                            </span>
+                            <span v-if = "totalPage < 8">
+                                <a class="page-numbers" v-for="num in pages" v-bind:class="{current: currentPage == num}" @click="changePage($event)">{{num}}</a>
+                            </span>
+                            <a class="page-numbers" v-bind:class="{current: currentPage == totalPage}" @click="changePage($event)">{{totalPage}}</a>
+                            <a class="page-numbers" v-bind:class="{disabled: currentPage == totalPage}"@click="changeToNextPage();">&gt;</a>
+                        </div>
+                    </nav>
+                </div>
+            </Main>
+        </div>
+
+        <!-- 侧边菜单栏 -->
+        <div class="widget-area all-sidebar">
+            <!-- 搜索栏 -->
+            <aside class="widget widget-search">
+                <div class="searchbar">
+                    <form method="get" id="searcharform1">
+                        <span>
+                            <input type="text" value name="keywords" placeholder="输入搜索内容" required>
+                            <button type="submit">搜索</button>
+                        </span>
+                    </form>
+                </div>
+                <div class="clear"></div>
+            </aside>
+            <!-- 热门标签 -->
+            <aside class="widget">
+                <h3 class="widget-title"><i class="fa fa-bars"></i>所有标签</h3>
+                <div class="tagcloud">
+                    <a href="${request.contextPath}/user/index" class="tag-link-129 tag-link-position-1" style="font-size:14px;">Java</a>
+                </div>
+                <div class="clear"></div>
+            </aside>
+            <!-- 热门文章 -->
+            <aside class="widget hot-comment">
+                <h3 class="widget-title"><i class="fa fa-bars"></i>热门文章</h3>
+                <div class="hot-comment-widget">
+                    <ul>
+                        <#list hotArticles as article>
+                            <li>
+                                <span class="li-icon li-icon-${article_index+1}">${article_index+1}</span>
+                                <a href="${request.contextPath}/article/showDetail/${article.id}" rel="bookmark" target="_blank">${article.title}</a>
+                            </li>
+                        </#list>
+
+                    </ul>
+                </div>
+                <div class="clear"></div>
+            </aside>
+            <!-- 随机文章 -->
+            <aside class="widget">
+                <h3 class="widget-title"><i class="fa fa-bars"></i>随机文章</h3>
+                <div class="random-post-widget">
+                    <ul>
+                        <li>sql语句分为三类（DML、DDL、DCL）-介绍</li>
+                        <li>MySQL存储引擎 -- MyISAM与InnoDB区别</li>
+                        <li>zz..</li>
+                        <li>使用rapid-framework继承jsp页面</li>
+                        <li>Hibernate基本类型</li>
+                        <li>五种IO模型</li>
+                        <li>JDBC常用API和使用</li>
+                        <li>JSP中forward转发和sendRedirect重定向的区别</li>
+                    </ul>
+                </div>
+                <div class="clear"></div>
+            </aside>
+        </div>
+    </div>
+    </div>
+</body>
+</html>

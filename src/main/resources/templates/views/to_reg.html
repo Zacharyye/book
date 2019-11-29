@@ -1,0 +1,144 @@
+﻿<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"> 
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>注册</title>
+	<link rel="stylesheet" type="text/css" href="/static/css/styles.css">
+	<script type="text/javascript" src="/static/js/jquery-3.3.1.min.js"></script>
+	<script type="text/javascript" src="/static/js/vue.js"></script>
+	<script type="text/javascript" src="/static/plugins/layui/lay/modules/layer.js"></script>
+	<script type="text/javascript" src="/static/js/jquery.md5.js"></script>
+	<script type="text/javascript">
+		$(function(){
+			var vew = new Vue({
+				el: "#app",
+				data: {
+					if_exist: false,
+					if_pass: false,
+				},
+				methods: {
+					verify: function() {
+						var v = this;
+						var ifnull = false;
+						$(".form input").each(function(index,elem){
+							if(!$(elem).val()){
+								ifnull = true;
+								var attr = $(elem).attr("id");
+								var attrname = "";
+								if(attr == "username"){
+									attrname = "账号";
+								} else if(attr == "nickname"){
+									attrname = "昵称";
+								} else if(attr == "password"){
+									attrname = "密码";
+								} else if(attr == "repassword"){
+									attrname = "确认密码";
+								} else if(attr == "email"){
+									attrname = "邮箱";
+								}
+								layer.msg("请输入"+attrname);
+								return false;
+							}
+						})
+						v.checkUsername();
+						if (!v.if_exist && v.if_pass) {
+							$.ajax({
+								url:"${request.contextPath}/user/add",
+								type:"post",
+								dataType:"json",
+								data: $(".form").serialize(),
+								success: function(result) {
+									console.log(result);
+									if(result.status == 0){
+										layer.msg("注册成功",{shift: -1, time: 2000},function(){
+											location.href = "${request.contextPath}/user/login";
+										});
+									} else {
+										layer.msg("注册失败");
+									}
+								},
+								error: function() {
+									layer.msg("Ops,出错了");
+								}
+							})
+						}
+						return !ifnull;
+					},
+					checkUsername: function(elem) {
+						var v = this;
+						var name = $("#username").val();
+						$.ajax({
+							url: "${request.contextPath}/user/findUser",
+							type: "get",
+							data: {"username": name},
+							dataType: "json",
+							success: function (result) {
+								console.log(result);
+								if (result.data) {
+									layer.tips("账号已存在", "#username" , {tips: [2, "#2f889a"]});
+									v.if_exist = true;
+								} else {
+									v.if_exist =  false;
+								}
+							},
+							error: function (e) {
+								layer.msg("Ops,出错了");
+							}
+						});
+					},
+					checkPassword: function() {
+						var v = this;
+						var pwd1 = $("#password").val();
+						var pwd2 = $("#repassword").val();
+						if (pwd1 != pwd2) {
+							layer.tips("密码不一致哦～", "#repassword" , {tips: [2, "#2f889a"]});
+							v.if_pass = false;
+						} else {
+							v.if_pass = true;
+						}
+					}
+				}
+			})
+		})
+
+		function reloadCode(){
+			var time = new Date().getTime();
+			$(".login_form span img").attr("src","${request.contextPath}/captcha/init?" + time);
+		}
+
+</script>
+</head>
+<body>
+<div id="app" class="htmleaf-container">
+	<div class="wrapper">
+		<div class="container">
+			<form class="form" action="" method="" @submit.prevent="verify();">
+				<input type="text" name="username" id="username" placeholder="账号" @blur="checkUsername();">
+				<input type="text" name="nickname" id="nickname" placeholder="昵称">
+				<input type="password" name="password" id="password" placeholder="密码">
+				<input type="password" name="repassword" id="repassword" placeholder="确认密码" @blur="checkPassword();">
+				<button type="submit" id="login-button">注册</button>
+			</form>
+		</div>
+		
+		<ul class="bg-bubbles">
+			<li></li>
+			<li></li>
+			<li></li>
+			<li></li>
+			<li></li>
+			<li></li>
+			<li></li>
+			<li></li>
+			<li></li>
+			<li></li>
+		</ul>
+	</div>
+</div>
+<div style="text-align:center;margin:50px 0; font:normal 14px/24px 'MicroSoft YaHei';color:#000000">
+<h1>小z的博客</h1>
+</div>
+</body>
+</html>

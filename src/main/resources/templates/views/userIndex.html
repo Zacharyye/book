@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" content="text/html">
+    <title>Index of Zachary's Blog</title>
+    <link rel="stylesheet" href="/static/plugins/layui/css/layui.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script type="text/javascript" src="/static/js/jquery-3.3.1.min.js"></script>
+    <script type="text/javascript" src="/static/js/vue.js"></script>
+    <script type="text/javascript" src="/static/plugins/layui/lay/modules/layer.js"></script>
+    <script type="text/javascript" src="/static/plugins/layui/layui.js"></script>
+    <script type="text/javascript" >
+        //文字滚动
+        (function($){
+            $.fn.textSlider = function(settings){
+                settings = jQuery.extend({
+                    speed:"normal",
+                    line: 2,
+                    timer: 1000
+                },settings);
+                return this.each(function(){
+                    $.fn.textSlider.scllor($(this),settings)
+                })
+            };
+            $.fn.textSlider.scllor = function($this,settings){
+                var ul = $("ul:eq(0)",$this);
+                var timerID;
+                var li = ul.children();
+                var _btnUp = $(".up:eq(0)",$this);
+                var _btnDown = $(".down:eq(0)");
+                var liHight = $(li[0]).height();
+                var upHeight = 0 - settings.line * liHight;
+                var scrollUp = function(){
+                    _btnUp.unbind("click",scrollUp);
+                    ul.animate({
+                            marginTop: upHeight
+                        },
+                        settings.speed,
+                        function(){
+                            for(var i = 0;i < settings.line;i++){
+                                ul.find("li:first").appendTo(ul);
+                            }
+                            ul.css({
+                                marginTop: 0
+                            })
+                            _btnUp.bind("click",scrollUp);
+                        }
+                    )
+                }
+                var scrollDown = function(){
+                    _btnDown.unbind("click",scrollDown);
+                    ul.css({
+                        marginTop: upHeight
+                    })
+                    for(var i = 0; i < settings.line;i++){
+                        ul.find("li:last").prependTo(ul)
+                    }
+                    ul.animate({
+                        marginTop:0
+                    },
+                        settings.speed,
+                        function(){
+                            _btnDown.bind("click",scrollDown)
+                        }
+                    )
+                }
+                var autoPlay = function(){
+                    timerID =  window.setInterval(scrollUp,settings.timer)
+                }
+                var autoStop = function(){
+                    window.clearInterval(timerID)
+                }
+                ul.hover(autoStop,autoPlay).mouseout();
+                _btnUp.css("cursor","pointer").click(scrollUp);
+                _btnUp.hover(autoStop,autoPlay);
+                _btnDown.css("cursor","pointer").click(scrollDown);
+                _btnDown.hover(autoStop,autoPlay);
+            }
+        })(jQuery)
+        $(function(){
+            var layeditIndex;
+            $(".scrolldiv").textSlider({line:1,speed:300,timer: 6000});
+            /**
+             * 富文本输入组件
+             */
+            layui.use("layedit",function(){
+                layedit = layui.layedit;
+                layeditIndex = layedit.build("addArticle",{
+                    height: 600 // 设置编辑器高度
+                }); //建立编辑器
+            });
+            //删除左右两端的空格
+            function trim(str){
+                return str.replace(/(^\s*)|(\s*$)/g,"");
+            }
+            //绑定事件--添加分类
+            $(document).on("click","#category-submit",function(){
+                if(trim($("#category-name").val()).length < 1){
+                    layer.alert("分类名称不可为空",{icon: 2});
+                    return false;
+                }
+                if(trim($("#category-name").val()).length > 20){
+                    layer.alert("分类名称不可超过20个字符",{icon: 2});
+                    return;
+                }
+                $.ajax({
+                    url:"${request.contextPath}/article/addCategory",
+                    type:"post",
+                    data:{
+                        categoryName:$("#category-name").val()
+                    },
+                    dataType:"json",
+                    success:function(result){
+                        console.log(result);
+                        if(result.status == 0){
+                            $("#category-name").val("");
+                            layer.msg("添加成功",{icon: 1});
+                            $("#category").append('<option value="'+result.data.id+'" selected="selected">'+ result.data.name +'</option>');
+                        } else {
+                            layer.msg("添加失败",{icon: 2});
+                        }
+                    },
+                    error:function(){
+                        layer.msg("后台好像投了点小懒哦，刷新一下试试！",{icon: 2},function(){
+                            window.location.reload();
+                        });
+                    }
+                });
+                return false;
+            })
+            //绑定事件--发布
+            $(document).on("click","#article-submit",function(){
+                if(trim($("#title").val()).length < 2){
+                    layer.alert("标题有点短呐！",{icon:5});
+                    return false;
+                } else if(trim($("#title").val()).length > 200){
+                    layer.alert("标题有点长了！",{icon: 5});
+                    return false;
+                } else if(!trim(layui.layedit.getText(layeditIndex))){
+                    layer.alert("写点内容吧！",{icon: 5});
+                    return false;
+                } else if(trim(layui.layedit.getText(layeditIndex)) < 10){
+                    layer.alert("再多写点内容吧！",{icon: 5});
+                    return false;
+                } else if(trim(layui.layedit.getText(layeditIndex)) > 500000){
+                    layer.alert("似乎写的有点多哦！",{icon: 5})
+                    return false;
+                } else if(!$("#category").val()){
+                    layer.alert("请选择分类！",{icon: 5})
+                    return false;
+                }
+                $.ajax({
+                    url: "${request.contextPath}/article/editArticle",
+                    type: "POST",
+                    dataType:"json",
+                    data: {
+                        "title": $("#title").val(),
+                        "content": layui.layedit.getContent(layeditIndex),
+                        "category": $("#category").val(),
+                        "status": $("#status").val(),
+                        "isAllowComment": $("#isAllowComment").val()
+                    },
+                    success: function(data){
+                        layer.alert("发布成功",{icon: 1});
+                    }
+                });
+
+            });
+        })
+    </script>
+</head>
+<body>
+    <header class="site-header">
+        <nav class="top-header">
+            <div class="top-nav">
+                <div class="user-login">
+                    <a href="${request.contextPath}/user/login">${username}</a>
+                </div>
+                <div class="menu-topmenu-container">
+                    <ul class="top-menu">
+                        <li class="menu-item">
+                            <a href="${request.contextPath}/user/logout" v-if="${username}">
+                                <i class="fa fa-sign-out"></i>
+                                <span class="">退出</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <div class="menu-box">
+            <div class="secondtop-menu">
+                <span class="nav-search">P</span>
+                <div class="logo-site">
+                    <h1 class="site-title"><a href="${request.contextPath}/user/index">Zachary's博客</a></h1>
+                    <p class="site-description">聆听，分享</p>
+                </div>
+                <div class="site-nav-wrap">
+                    <nav class="site-nav">
+                        <div class="menu-pcmenu-container">
+                            <ul class="down-menu nav-menu">
+                                <li><a href="${request.contextPath}/user/index"><span>首页</span></a></li>
+<!--                                <li><a href="${request.contextPath}/user/userIndex"><span>写文章</span></a></li>-->
+                            </ul>
+                        </div>
+                    </nav>
+                </div>
+                <div class="clear"></div>
+            </div>
+        </div>
+    </header>
+    <!-- 搜索框 -->
+    <div class="search-main">
+        <div class="searchbar">
+            <form method="get" class="searchForm" action="${request.contextPath}/user/index">
+                <span>
+                    <input type="text" value="" name="query" placeholder="输入搜索内容" required>
+                    <button type="submit" class="searchsubmit">搜索</button>
+                </span>
+            </form>
+        </div>
+        <div class="clear"></div>
+    </div>
+    <!-- 新闻小喇叭 -->
+    <nav class="breadcrumb">
+        <div class="bull">
+            <i>P彡</i>
+        </div>
+        <div class="scrolldiv">
+            <div class="scrolltext">
+                <ul style="margin-top: 0;">
+                    <li class="scrolltext-title">
+                        <a href="/" rel="bookmark">欢迎来到小z'博客</a>
+                    </li>
+                    <li class="scrolltext-title">
+                        <a href="/" rel="bookmark">本站测试~</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <!-- 内容区域 -->
+    <div class="site-content" style="transform: none;">
+        <div class="col-md-9">
+            <div class="form-group">
+                <input type="text" class="form-control input-lg input-flat" name="title" id="title" placeholder="标题：Java"/>
+            </div>
+            <div class="form-group">
+               <div class="article-wrapper">
+                    <textarea id="addArticle" class="article-area">
+
+                    </textarea>
+               </div>
+            </div>
+        </div>
+
+        <!-- 侧边菜单栏 -->
+        <div class="col-md-3 col-sidebar">
+            <!-- 发布 -->
+            <aside class="theiaStickySidebar">
+                <div class="box box-solid">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">发布</h3>
+                    </div>
+                    <div class="form-horizontal">
+                        <div class="box-body">
+                            <div class="form-group">
+                                <label class="control-label col-md-4">状态</label>
+                                <div class="col-md-6">
+                                    <select id="status" class="form-control input-flat">
+                                        <option value="publish">已发布</option>
+                                        <option value="draft">草稿</option>
+                                        <option value="private">私密</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="control-label col-md-4">评论</label>
+                                <div class="col-md-6">
+                                    <select id="isAllowComment" class="form-control input-flat">
+                                        <option value="1">允许</option>
+                                        <option value="0">禁止</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="box-footer">
+                            <button type="button" class="btn btn-primary pull-right" id="article-submit">发布</button>
+                        </div>
+                    </div>
+                    <div class="clear"></div>
+                </div>
+                <div class="box box-solid">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">分类</h3>
+                    </div>
+                    <div class="form-horizontal">
+                        <div class="box-body">
+                            <select id="category" class="form-control input-flat">
+                                <option value="">请选择</option>
+                                <#if Request["categoryList"]??>
+                                    <#list Request["categoryList"] as category>
+                                        <option value="${category.id}">${category.name}</option>
+                                    </#list>
+                                </#if>
+                            </select>
+                        </div>
+                        <div class="box-footer">
+                            <a href="#" class="bold" id="add-category-btn">+添加新分类</a>
+                            <div class="input-group input-group-md" id="add-category-input">
+                                <input type="text" class="form-control input-flat" id="category-name"/>
+                                <span class="input-group-btn">
+                                    <button type="button" class="btn btn-primary btn-flat" id="category-submit">添加</button>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="clear"></div>
+                </div>
+                <div class="box box-solid">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">标签</h3>
+                    </div>
+                    <div class="form-horizontal">
+                        <div class="box-footer">
+                            <input type="text" class="form-control input-flat" name="tags" id="tags" placeholder="如：Java，面试，华为" oninput="if(value.length>30) value=value.slice(0,30)"/>
+                            <span class="help-block text-maroon">以逗号(,或，)分隔，最多5个</span>
+                        </div>
+                    </div>
+                    <div class="clear"></div>
+                </div>
+            </aside>
+        </div>
+    </div>
+</body>
+</html>
