@@ -1,8 +1,8 @@
-package com.zacharye.book.service;
+package com.zacharye.book.service.master;
 
-import com.zacharye.book.entity.Article;
-import com.zacharye.book.entity.Category;
-import com.zacharye.book.entity.Comment;
+import com.zacharye.book.entity.master.Article;
+import com.zacharye.book.entity.master.Category;
+import com.zacharye.book.entity.master.Comment;
 import com.zacharye.book.util.Result;
 
 import java.util.List;

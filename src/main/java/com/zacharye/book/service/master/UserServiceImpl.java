@@ -1,13 +1,11 @@
-package com.zacharye.book.service;
+package com.zacharye.book.service.master;
 
-import com.zacharye.book.dao.UserDao;
-import com.zacharye.book.entity.User;
-import com.zacharye.book.service.UserService;
+import com.zacharye.book.dao.master.UserDao;
+import com.zacharye.book.entity.master.User;
 import com.zacharye.book.util.Result;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.Map;
 
 @Service("userService")
 public class UserServiceImpl implements UserService {

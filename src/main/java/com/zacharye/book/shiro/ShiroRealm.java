@@ -1,14 +1,14 @@
 package com.zacharye.book.shiro;
 
-import com.zacharye.book.entity.User;
-import com.zacharye.book.service.UserService;
+import com.zacharye.book.entity.master.User;
+import com.zacharye.book.service.master.UserService;
 import org.apache.shiro.authc.*;
 import org.apache.shiro.authz.AuthorizationInfo;
 import org.apache.shiro.crypto.hash.SimpleHash;
 import org.apache.shiro.realm.AuthorizingRealm;
 import org.apache.shiro.subject.PrincipalCollection;
 import org.apache.shiro.util.ByteSource;
-import org.springframework.stereotype.Component;
+
 import javax.annotation.Resource;
 
 public class ShiroRealm extends AuthorizingRealm {

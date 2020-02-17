@@ -1,10 +1,9 @@
 package com.zacharye.book.controller;
 
-import com.zacharye.book.controller.AbstractController;
-import com.zacharye.book.entity.Article;
-import com.zacharye.book.entity.Category;
-import com.zacharye.book.entity.Comment;
-import com.zacharye.book.service.ArticleService;
+import com.zacharye.book.entity.master.Article;
+import com.zacharye.book.entity.master.Category;
+import com.zacharye.book.entity.master.Comment;
+import com.zacharye.book.service.master.ArticleService;
 import com.zacharye.book.util.RequestUtil;
 import com.zacharye.book.util.Result;
 import org.springframework.stereotype.Controller;
@@ -12,7 +11,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.w3c.dom.Text;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -20,7 +18,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.sql.rowset.serial.SerialBlob;
 import java.io.UnsupportedEncodingException;
-import java.net.InetAddress;
 import java.sql.Blob;
 import java.sql.SQLException;
 import java.util.HashMap;

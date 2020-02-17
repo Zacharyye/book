@@ -1,7 +1,7 @@
-package com.zacharye.book.dao;
+package com.zacharye.book.dao.master;
 
 
-import com.zacharye.book.entity.User;
+import com.zacharye.book.entity.master.User;
 import org.springframework.stereotype.Repository;
 
 @Repository

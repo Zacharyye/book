@@ -29,6 +29,7 @@ public class ShiroConfig {
 
         Map<String, String> filterChainMap = new LinkedHashMap<>();
         filterChainMap.put("/user/login","anon");
+        filterChainMap.put("/wxuser/**","anon");
         filterChainMap.put("/user/register","anon");
         filterChainMap.put("/user/add","anon");
         filterChainMap.put("/user/findUser","anon");

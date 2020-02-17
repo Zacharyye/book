@@ -1,9 +1,9 @@
-package com.zacharye.book.dao;
+package com.zacharye.book.dao.master;
 
 
-import com.zacharye.book.entity.Article;
-import com.zacharye.book.entity.Category;
-import com.zacharye.book.entity.Comment;
+import com.zacharye.book.entity.master.Article;
+import com.zacharye.book.entity.master.Category;
+import com.zacharye.book.entity.master.Comment;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;

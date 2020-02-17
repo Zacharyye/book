@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" ?>  
 <!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"      
  "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
-<mapper namespace="com.zacharye.book.dao.ArticleDao">
+<mapper namespace="com.zacharye.book.dao.master.ArticleDao">
     <!-- 添加分类信息 -->
-    <insert id="addCategory" parameterType="com.zacharye.book.entity.Category"
+    <insert id="addCategory" parameterType="com.zacharye.book.entity.master.Category"
             useGeneratedKeys="true" keyProperty="id">
         INSERT INTO category(login_user,name,created_at)
         VALUES(#{login_user},#{name},current_timestamp )
     </insert>
 
     <!-- 根据登录账号查询已添加分类信息 -->
-    <select id="findCategories" resultType="com.zacharye.book.entity.Category" parameterType="string">
+    <select id="findCategories" resultType="com.zacharye.book.entity.master.Category" parameterType="string">
         SELECT id,name
         FROM category
         WHERE login_user = #{login_user}
@@ -18,13 +18,13 @@
     </select>
 
     <!-- 添加文章信息 -->
-    <insert id="addArticle" parameterType="com.zacharye.book.entity.Article" >
+    <insert id="addArticle" parameterType="com.zacharye.book.entity.master.Article" >
         INSERT INTO article(title,content,category_id,created_at,status,isAllowComment,login_user)
         VALUES(#{title},#{content},#{category},current_timestamp,#{status},#{isAllowComment},#{login_user})
     </insert>
 
     <!-- 修改文章信息 -->
-    <insert id="editArticle" parameterType="com.zacharye.book.entity.Article" >
+    <insert id="editArticle" parameterType="com.zacharye.book.entity.master.Article" >
         UPDATE article
         SET title = #{title},
             content = #{content},
@@ -36,21 +36,21 @@
     </insert>
 
     <!-- 查找文章：按指定登录名 -->
-    <select id="findArticlesByLoginUser" parameterType="string" resultType="com.zacharye.book.entity.Article">
+    <select id="findArticlesByLoginUser" parameterType="string" resultType="com.zacharye.book.entity.master.Article">
         SELECT title,content,category_id AS "category",status,isAllowComment
         FROM article
         WHERE login_user = #{login_user}
     </select>
 
     <!-- 查找文章：按指定ID -->
-    <select id="findArticleById" parameterType="string" resultType="com.zacharye.book.entity.Article">
+    <select id="findArticleById" parameterType="string" resultType="com.zacharye.book.entity.master.Article">
         SELECT a.id,a.title,a.content,c.name AS "category_name",a.created_at,IFNULL(a.support,0) support
         FROM article a JOIN category c ON c.id = a.category_id
         WHERE a.id = #{id}
     </select>
 
     <!-- 查找文章：按指定参数 -->
-    <select id="findArticleByParams" parameterType="map" resultType="com.zacharye.book.entity.Article">
+    <select id="findArticleByParams" parameterType="map" resultType="com.zacharye.book.entity.master.Article">
         SELECT a.id,a.title,a.content,c.name AS "category_name",a.created_at,IFNULL(a.support,0) support,count(ct.*)/#{pageSize}
         FROM article a JOIN category c ON c.id = a.category_id
                        JOIN artcile_comment ct ON ct.article_id = a.id
@@ -64,14 +64,14 @@
     </update>
 
     <!-- 查找全部文章信息 -->
-    <select id="findAllSimplifiedArticles" resultType="com.zacharye.book.entity.Article">
+    <select id="findAllSimplifiedArticles" resultType="com.zacharye.book.entity.master.Article">
         SELECT a.id,a.title,a.content,c.name AS "category_name",a.created_at,IFNULL(a.support,0) support
         FROM article a JOIN category c ON c.id = a.category_id
         ORDER BY a.created_at DESC
     </select>
 
     <!-- 查找指定文章信息 -->
-    <select id="findAllSimplifiedArticlesByCondition" resultType="com.zacharye.book.entity.Article" parameterType="map">
+    <select id="findAllSimplifiedArticlesByCondition" resultType="com.zacharye.book.entity.master.Article" parameterType="map">
         SELECT a.id,a.title,a.content,c.name AS "category_name",Date(a.created_at) created_time,IFNULL(a.support,0) support,
                 COUNT(ac.id) comment_num
         FROM article a JOIN category c ON c.id = a.category_id
@@ -88,7 +88,7 @@
     </select>
 
     <!-- 查出前十个热门文章-->
-    <select id="findHotArticles" resultType="com.zacharye.book.entity.Article">
+    <select id="findHotArticles" resultType="com.zacharye.book.entity.master.Article">
       SELECT id,title
       FROM article
       ORDER BY support DESC
@@ -96,7 +96,7 @@
     </select>
 
     <!-- 添加评论 -->
-    <insert id="addComment" parameterType="com.zacharye.book.entity.Comment">
+    <insert id="addComment" parameterType="com.zacharye.book.entity.master.Comment">
         INSERT INTO article_comment (article_id,user_id,content)
         SELECT #{article_id},id,#{content}
         FROM login_user
@@ -104,7 +104,7 @@
     </insert>
 
     <!-- 查找文章评论 -->
-    <select id="findCommentsByArticleIdV2" parameterType="com.zacharye.book.entity.Comment" resultType="com.zacharye.book.entity.Comment">
+    <select id="findCommentsByArticleIdV2" parameterType="com.zacharye.book.entity.master.Comment" resultType="com.zacharye.book.entity.master.Comment">
         SELECT ac.id,ac.article_id,ac.content,lu.nickname author,concat(concat(date(created_at)," "),time(created_at)) created_time,
           (select ceil(count(1) * 1.00 / #{pageSize}) from article_comment ac_ where ac_.article_id = #{article_id}) totalPage,
           (select count(1) from article_comment ac_ where ac_.article_id = #{article_id}) totalNum

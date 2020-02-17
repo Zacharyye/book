@@ -1,9 +1,7 @@
-package com.zacharye.book.service;
+package com.zacharye.book.service.master;
 
-import com.zacharye.book.entity.User;
+import com.zacharye.book.entity.master.User;
 import com.zacharye.book.util.Result;
-
-import java.util.Map;
 
 public interface UserService {
     User findUserByLoginName(String username);

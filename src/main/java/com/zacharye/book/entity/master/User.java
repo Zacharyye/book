@@ -1,4 +1,4 @@
-package com.zacharye.book.entity;
+package com.zacharye.book.entity.master;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
