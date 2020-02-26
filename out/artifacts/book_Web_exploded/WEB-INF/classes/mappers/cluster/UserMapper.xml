@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"      
+ "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<mapper namespace="com.zacharye.book.dao.cluster.WxUserDao">
+    <!-- 根据输入的账号查找用户 -->
+    <select id="findUserByOpenId" resultType="com.zacharye.book.entity.cluster.WxUser" parameterType="String" >
+        SELECT id,uid,uname,ugender,ubalance,skey,uavatar,create_time,update_time
+        FROM users
+        WHERE uid = #{openid}
+    </select>
+    <!-- 新增用户 -->
+    <insert id="addWxUser" parameterType="com.zacharye.book.entity.cluster.WxUser">
+        <selectKey resultType="java.lang.Integer" keyProperty="id" order="AFTER">
+        SELECT LAST_INSERT_ID()
+        </selectKey>
+        INSERT INTO users (uname,ugender,uaddress,ubalance,uavatar,skey,sessionkey,create_time)
+        VALUES (#{uname},#{ugender},#{uaddress},#{ubalance},#{uavatar},#{skey},#{sessionkey},current_timestamp)
+    </insert>
+    <!-- 查询书单 -->
+    <select id="findAllBooks" resultType="com.zacharye.book.entity.cluster.Book">
+        SELECT *
+        FROM books
+    </select>
+    <!-- 查询评论以及书籍是否购买 -->
+    <select id="findCommentsByBookId" resultType="com.zacharye.book.entity.cluster.Comment" parameterType="String">
+        SELECT cmid,uname,ccontent,uavatar,ctime,date_format(ctime,'%Y-%m-%d %H:%i:%S') "timeStr"
+        FROM comment
+        WHERE bkid = #{bkid}
+        ORDER BY ctime DESC
+    </select>
+    <select id="findBookIsBuy" resultType="String" parameterType="Map">
+        SELECT 1
+        FROM users u, orders o
+        WHERE u.skey = #{skey} and o.uid = u.uid and o.bkid = #{bookid}
+    </select>
+    <!-- 新增评论 -->
+    <insert id="addComment" parameterType="Map">
+        INSERT INTO comment (uid,uname,ccontent,bkname,bkid,uavatar,ctime)
+        SELECT u.uid,u.uname,#{content},b.bkname,#{bookid},u.uavatar,current_timestamp
+        FROM users u, books b
+        WHERE u.skey = #{skey} and b.bkid = #{bookid}
+    </insert>
+    <!-- 新增order -->
+    <insert id="addOrderInfo" parameterType="Map">
+        INSERT INTO orders (uid,oprice,otime,bkid)
+        SELECT u.uid,bkprice,current_timestamp ,#{bookid}
+        FROM users u, books b
+        WHERE u.skey = #{skey} and b.bkid = #{bookid}
+    </insert>
+    <update id="updateUserInfo" parameterType="Map">
+        UPDATE users
+        SET ubalance = ubalance - (select bkprice from books where bkid = #{bookid})
+        WHERE skey = #{skey}
+    </update>
+    <select id="getMyBooks" parameterType="Map" resultType="com.zacharye.book.entity.cluster.Book">
+        SELECT b.bkid,b.bkname,b.bkfile,b.bkcover
+        FROM users u, orders o, books b
+        WHERE u.skey = #{skey} and o.uid = u.uid and b.bkid = o.bkid
+    </select>
+</mapper>
+
+
+
+
+
+
+

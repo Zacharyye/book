@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" content="text/html">
+    <title>哦不，出错了</title>
+    <link rel="stylesheet" href="${request.contextPath}/resources/css/sweetalert2.min.css"/>
+    <style>
+        html,body{width: 100%;height: 100%;margin: 0;padding: 0;}
+        .login_bg{display: block;background: #fff;height: 100%;width: 100%;text-align:center;position:relative;}
+        .login_left{display: inline-block;vertical-align:top;background: url(${request.contextPath}/resources/images/bg/login_bg.jpg);height: 100%;width: 100%;background-size: cover;}
+        .login_right{display: inline-block;vertical-align:top;background: #1296db;width: 31.25rem;position:absolute;top:25%;right:32%;box-shadow: #1296db 0px 0px 50px;}
+        .login_right form{width: 100%;height: 50%; line-height: 100%;margin: 30% 0;padding: 50px 0px;}
+        input{display:block;border:none;width:60%;margin: 10px auto;height: 30px;padding: 2px 5px;font-size: 16px;outline: none;background: transparent;
+            border-bottom: 1px solid #fff;color: #fff !important;}
+        input.verifycode{width:20%;display:inline-block;margin-right: 10%;}
+        .login_right span{display:inline-block;width: 30%;color: #fff;}
+        .login_right a{display:inline-block;color: #fff;
+            letter-spacing: 3px;cursor:pointer;}
+        .login_right a.left{
+            margin-right: 4.5rem;}
+        .login_right a.right{
+            margin-left: 4.5rem;}
+        ::-webkit-input-placeholder{
+            color: #fff;
+        }
+        :-moz-placeholder{
+            color: #fff;
+        }
+        ::-moz-placeholder{
+            color: #fff;
+        }
+        :-ms-input-placeholder{
+            color: #fff;
+        }
+        input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus{
+            -webkit-text-fill-color: #fff !important;
+            -webkit-box-shadow: 0 0 0px 1000px #1296db inset !important;
+            caret-color: #fff !important;
+        }
+        input.submit{height: auto;background: #fff;color: #1296db !important; border:none;padding: 10px 0px;border-radius: 2px;letter-spacing: 5px;
+            cursor: pointer;}
+        .error-txt{color: #fff;}
+    </style>
+    <script type="text/javascript" src="${request.contextPath}/resources/js/jquery-3.3.1.min.js"></script>
+    <script type="text/javascript" src="${request.contextPath}/resources/js/vue.js"></script>
+    <script type="text/javascript" src="${request.contextPath}/resources/plugins/layui/lay/modules/layer.js"></script>
+    <script type="text/javascript" src="${request.contextPath}/resources/js/jquery.md5.js"></script>
+    <script type="text/javascript">
+        $(function(){
+            //页面加载完成以后触发
+            var login_error = '${Request["login_error"]}';
+            if(login_error == 1){
+                layer.alert("请输入账号");
+            } else if(login_error == 2){
+                $(".username").val('${Request["username"]}');
+                layer.alert("密码错误");
+            } else if(login_error == 3){
+                $(".username").val('${Request["username"]}');
+                layer.alert("验证码错误");
+            }
+        })
+
+        function verify(){
+            var ifnull = false;
+            $(".login_right input").each(function(index,elem){
+                if(!$(elem).val()){
+                    ifnull = true;
+                    var attr = $(elem).attr("class");
+                    var attrname = "";
+                    if(attr == "username"){
+                        attrname = "账号";
+                    } else if(attr == "password"){
+                        attrname = "密码";
+                    } else if(attr == "verifycode"){
+                        attrname = "验证码";
+                    }
+                    layer.alert("请输入"+attrname);
+                    return false;
+                }
+            })
+            $(".password").val($.md5($(".password").val()));
+            return !ifnull;
+        }
+
+        function reloadCode(){
+            var time = new Date().getTime();
+            $(".login_form span img").attr("src","${request.contextPath}/captcha/init?" + time);
+        }
+    </script>
+</head>
+<body>
+    <div class="login_bg">
+        <div class="login_left"></div>
+        <div class="login_right">
+           <h1 class="error-txt">抱歉，出错了</h1>
+        </div>
+    </div>
+</body>
+</html>

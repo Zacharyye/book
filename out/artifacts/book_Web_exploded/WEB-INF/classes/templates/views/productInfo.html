@@ -1,0 +1,126 @@
+﻿<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>上传产品</title>
+<script type="text/javascript" src="/static/js/jquery-3.3.1.min.js"></script>
+<script type="text/javascript" src="/static/js/vue.js"></script>
+<script type="text/javascript" src="/static/plugins/layui/lay/modules/layer.js"></script>
+<script type="text/javascript" src="/static/js/jquery.md5.js"></script>
+	<style>
+		body {font-size: .95rem;color: #222;}
+		table ,table tr, table caption{width: 100%;box-sizing: border-box;}
+		table {border-right: .1px solid #333;border-top: none;}
+		table caption {text-align: left;font-size: .75rem;width: 100%;background-color: #c00000; color: #fff;padding: 5px;border: .1px solid #333;border-bottom: none;}
+		table td {width: calc(100% / 5);font-size: .65rem;text-align: center; border-left: .1px solid #333;border-bottom: .1px solid #333;padding: 5px;}
+		table tr td:last-child {border-right: .1px solid #333;}
+		table tr:nth-child(odd) {background-color: #fff2cd;}
+		table tr:nth-child(even) {background-color: #fce9da;}
+		table tr:first-child{background-color: #fff;}
+		table:not(:last-child) {margin-bottom: 15px;}
+		tr.even {background-color: #fce9da;}
+		tr.odd {background-color: #fff2cd;}
+	</style>
+	<script type="text/javascript">
+		$(function(){
+			//页面加载完成以后触发
+			$.ajax({
+				url: "${request.contextPath}/user/toFindProduct",
+				type: "get",
+				dataType:'JSON',
+				success: function (data) {
+					var content = data.data;
+					var contentArray = content.split("@");
+					var htmlStr = "";
+					var index = 0;
+					var rowSpan = 1;
+					var lineArray = {};
+					for (var i = 0; i < contentArray.length; i++) {
+						var product = contentArray[i];
+						var productArray = product.split("|");
+						var lineMap = new Array();
+						lineMap[0] = new Array();
+						for (var j = 1; j < productArray.length; j++) {
+							lineMap[j] = new Array();
+							index = 0;
+							if(!productArray[j] || ";;;;;;;" == productArray[j]) {
+								continue;
+							}
+							if(!productArray[j+1] || ";;;;;;;" == productArray[j+1]) {
+								continue;
+							}
+							var trArray = productArray[j].split(";");
+							var trArray_ = productArray[j+1].split(";");
+							for (var k = 0; k < trArray.length; k++) {
+								if (trArray[k] && !trArray_[k]) {
+									index = j;
+									lineMap[index][k] = 2;
+									continue;
+								}
+								if (lineMap[index][k] && !trArray[k] && j != index + 1) {
+									lineMap[index][k] = lineMap[index][k] + 1;
+									continue;
+								}
+
+							}
+						}
+						lineArray[i] = lineMap;
+					}
+					for (var i = 0; i < contentArray.length; i++) {
+						var product = contentArray[i];
+						var productArray = product.split("|");
+						htmlStr += "<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\">" +
+								"<caption>" +productArray[0]+ "</caption>";
+						var indexMap = {};
+						for (var j = 1; j < productArray.length; j++) {
+							if(!productArray[j] || ";;;;;;;" == productArray[j]) {
+								continue;
+							}
+							var trArray = productArray[j].split(";");
+							var colSpan = 1;
+							var index = 0;
+							for (var k = 0; k < trArray.length; k++) {
+								if (j == 1) {
+									if (trArray[k] && (k+1 < trArray.length) && !trArray[k+1]) {
+										index = k;
+										colSpan++;
+										indexMap[index] = colSpan;
+										continue;
+									}
+									if(!trArray[k] && k != index + 1){
+										colSpan++;
+										indexMap[index] = colSpan;
+										continue;
+									}
+								}
+								index = 0;
+								colSpan = 1;
+							}
+							htmlStr += "<tr>";
+							for (var k = 0; k < trArray.length; k++) {
+								if (trArray[k]) {
+									var lineEg = lineArray[i];
+									var rowJ = lineEg[j];
+									var rowSpan = rowJ[k];
+									htmlStr += "<td rowspan='"+(rowSpan ? rowSpan : 1)+"' colspan='"+ (indexMap[k] ? indexMap[k] : 1)+"'>" + trArray[k] + "</td>";
+								}
+							}
+							htmlStr += "</tr>";
+						}
+						htmlStr += "</table>";
+					}
+					$("body").html(htmlStr);
+				},
+				error: function () {
+					layer.msg("error");
+				}
+			})
+		})
+	</script>
+</head>
+<body>
+
+</body>
+</html>

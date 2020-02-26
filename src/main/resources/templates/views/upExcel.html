@@ -1,0 +1,77 @@
+﻿<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>上传产品</title>
+	<link rel="stylesheet" type="text/css" href="../../static/css/styles.css">
+	<script type="text/javascript" src="/static/js/jquery-3.3.1.min.js"></script>
+	<script type="text/javascript" src="/static/js/vue.js"></script>
+	<script type="text/javascript" src="/static/plugins/layui/lay/modules/layer.js"></script>
+	<script type="text/javascript" src="/static/js/jquery.md5.js"></script>
+	<script type="text/javascript">
+		$(function(){
+			//页面加载完成以后触发
+			layer.msg("请上传产品文件");
+			$("#login-button").on('click', function () {
+				var formData = new FormData();
+				var name = $("#file").val();
+				formData.append("file",$("#file")[0].files[0]);
+				formData.append("name",name);
+				$.ajax({
+					url: "${request.contextPath}/user/toUpExcel",
+					type: "post",
+					async: false,
+					data: formData,
+					dataType:'JSON',
+					processData: false,
+					contentType: false,
+					beforeSend: function() {
+						layer.msg("正在进行");
+					},
+					success: function (data) {
+						console.log(data);
+					},
+					error: function () {
+						layer.msg("上传失败");
+					}
+				})
+
+			})
+		})
+
+</script>
+</head>
+<body>
+<div class="htmleaf-container">
+	<div class="wrapper">
+		<div class="container">
+			<h1>Welcome</h1>
+			<form class="form" action="${request.contextPath}/user/toUpExcel" onsubmit="return false;" method="post" enctype="multipart/form-data">
+				<input id="file" name="excel" type="file" accept="application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"/>
+				<button id="login-button">提交</button>
+			</form>
+		</div>
+		
+		<ul class="bg-bubbles">
+			<li></li>
+			<li></li>
+			<li></li>
+			<li></li>
+			<li></li>
+			<li></li>
+			<li></li>
+			<li></li>
+			<li></li>
+			<li></li>
+		</ul>
+	</div>
+</div>
+
+
+<div style="text-align:center;margin:50px 0; font:normal 14px/24px 'MicroSoft YaHei';color:#000000">
+<h1>上传产品信息</h1>
+</div>
+</body>
+</html>
