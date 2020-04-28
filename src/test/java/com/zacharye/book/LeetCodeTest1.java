@@ -1,5 +1,7 @@
 package com.zacharye.book;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestTemplate;
 import org.springframework.test.context.TestPropertySource;
@@ -9,6 +11,8 @@ import java.util.*;
 public class LeetCodeTest1 {
   private List<List<Integer>> output = new ArrayList();
   int n, k;
+  //for 8 queens
+  private int[] result = new int[8];
 
   @Test
   public void testSPath () {
@@ -29,6 +33,67 @@ public class LeetCodeTest1 {
   public void testSubset() {
     int[] nums = {1,2,3};
     System.out.println(subsets_B(nums));
+  }
+
+  @Test
+  public void test8Queens () {
+    //cal8queens(0);
+    System.out.println(Integer.MIN_VALUE);
+    Calendar calendar = Calendar.getInstance();
+
+    calendar.setTime(new Date());
+
+    calendar.add(Calendar.MONTH, 1);//增加一个月
+
+    System.out.println("增加月份后的日期："+calendar.getTime());
+//计算两个日期相差的天数
+    long intervalMilli = System.currentTimeMillis() - calendar.getTime().getTime();
+    int xiangcha = (int) (intervalMilli / (24 * 60 * 60 * 1000));
+    System.out.println(xiangcha);
+  }
+
+  public void cal8queens(int row) {
+    if (row == 8) {
+      printQueens(result);
+      return;
+    }
+    for (int column = 0; column < 8; ++column) {
+      if (isOk(row, column)) {
+        result[row] = column;
+        cal8queens(row + 1);
+      }
+    }
+  }
+
+  private boolean isOk(int row, int column) {
+    int leftup = column - 1,rightup = column + 1;
+    for (int i = row - 1; i >= 0; --i) {
+      if (result[i] == column) {
+        return false;
+      }
+      if (leftup >= 0) {
+        if (result[i] == leftup) return false;
+      }
+      if (rightup < 8) {
+        if (result[i] == rightup) return false;
+      }
+      --leftup; ++ rightup;
+    }
+    return true;
+  }
+
+  private void printQueens(int[] result) {
+    for (int row = 0; row < 8; ++row) {
+      for (int column = 0; column < 8; ++column) {
+        if (result[row] == column) {
+          System.out.print("Q ");
+        } else {
+          System.out.print("* ");
+        }
+      }
+      System.out.println();
+    }
+    System.out.println();
   }
 
   public List<List<Integer>> subsets_B(int[] nums) {
@@ -112,9 +177,12 @@ public class LeetCodeTest1 {
   }
 
   @Test
-  public void testMinSetSize () {
+  public void testMinSetSize () throws JSONException {
     int[] arr = {3,5,4,3,2,6,2,2,1,9,7,5};
     System.out.println(minSetSize(arr));
+    JSONObject object = new JSONObject();
+    object.put("123",123).put("23",123);
+    System.out.println(object.toString());
   }
 
   public int minSetSize (int[] arr) {
